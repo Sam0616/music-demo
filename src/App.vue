@@ -15,16 +15,16 @@
                 </form>
             </div>
         </div>
-
         <div class="row" style=" text-align:left;">
-
             <div>
                 <span id="song1"
                       style="margin-left: 5px;font-weight: bold;font-size: 17px;color: #D9534F; font-style: oblique">歌单：</span><br>
                 <div class="col-lg-2 bd menu" style="height: 610px;overflow: auto;margin-top: 26px">
                     <ul class="list-group">
-                        <li class="list-group-item" v-for="s in songs" v-bind:key="s"><a href="#"
-                                                                                         @click="getMusic(s.id)">{{s.name}}</a>
+                        <li class="list-group-item" v-for="s in songs" v-bind:key="s">
+                            <a href="#" title="播放" style="text-decoration:none;" id="a1" @click="getMusic(s.id)">{{s.name}} </a>
+                            <span id="a2" v-show="s.mvid!=0" title="MV" @click="openMV(s.id)"
+                                  class="el-icon-video-play"></span>
                         </li>
                     </ul>
                 </div>
@@ -33,9 +33,10 @@
                 <img :src="musicCover" v-bind:class="{ 'playC': isActive }"
                      style="height: 550px;weight:800px;margin-left:80px;border-radius: 300px;margin-top: 10px;margin-bottom: 10px">
 
-                <div class="col-lg-12 myborder" v-show="flagshow" style="margin-top: 13px" >
+                <div class="col-lg-12 myborder" v-show="flagshow" style="margin-top: 13px">
                     <audio :src="musicSrc" autoplay controls loop
-                           style="margin-left: 200px;outline: none;color:#D9534F " @pause="switch1" @play="switch1" ></audio>
+                           style="margin-left: 200px;outline: none;color:#D9534F " @pause="switch1"
+                           @play="switch1"></audio>
                 </div>
             </div>
             <span style="margin-left: 107px;font-weight: bold;color: #D9534F; font-size: 17px;font-style: oblique">网易云热评：</span>
@@ -47,12 +48,22 @@
                     </li>
                 </ul>
             </div>
+
+            <video :src="mvUrl" v-if="isActive2" style="width: 764px;height: 440px" autoplay controls loop
+                   @blur="close1" id="video1"></video>
+
         </div>
+
+
     </div>
+
+
 </template>
 
 <script>
+
     const axios = require("axios")
+
     export default {
         name: 'App',
         data() {
@@ -64,15 +75,17 @@
                 musicCover: '',
                 flagshow: false,
                 content: [],
-                isActive: true
+                isActive: true,
+                isActive2: false,
+                mvUrl: "",
             }
         },
+
         methods: {
             //获取歌曲列表
             searchMusic: function () {
                 const url = "https://musicapi.leanapp.cn/search?keywords=" + this.keyword + "&limit=100"
                 axios.get(url).then(res => {
-                    console.log(res.data.result.songs)
                     // let result = res.data.result.songs
                     //this.songs = res.data.result.songs
                     //歌单置空
@@ -88,17 +101,18 @@
             },
             // 根据歌曲id获取歌曲
             getMusic: function (id) {
+
                 //显示播放框
                 this.flagshow = true;
                 // 获取id
                 const url = "https://autumnfish.cn/song/url?id=" + id
                 axios.get(url).then(res => {
-                    console.log(res.data.data[0].url)
                     this.musicSrc = res.data.data[0].url;
                 })
+
                 const url2 = "https://autumnfish.cn/song/detail?ids=" + id;
                 axios.get(url2).then(res => {
-                    console.log(res.data.songs[0].al.picUrl)
+                    // console.log(res.data.songs[0].al.picUrl)
                     this.musicCover = res.data.songs[0].al.picUrl
                 })
 
@@ -106,20 +120,39 @@
                 axios.get(url3).then(res => {
                     this.content = res.data.hotComments
                 })
-                // 5.mv地址获取
+            },
+            // mv
+            openMV: function (id) {
+                this.isActive2 = true
+
+                const url4 = "https://autumnfish.cn/song/detail?ids=" + id
+                axios.get(url4).then(res => {
+                    var mvid = res.data.songs[0].mv
+                    const url5 = "https://autumnfish.cn/mv/url?id=" + mvid
+                    axios.get(url5).then(res => {
+                        this.mvUrl = res.data.data.url
+                        document.getElementById('video1').focus()
+                    })
+                })
 
             },
 
-            switch1:function () {
+            close1: function () {
+                this.isActive2 = false
+            },
 
-                if (this.isActive==true){
-                    this.isActive=false
-                }else {
-                    this.isActive=true
+
+            switch1: function () {
+                if (this.isActive == true) {
+                    this.isActive = false
+                } else {
+                    this.isActive = true
                 }
             }
         },
     }
+
+
 </script>
 
 
@@ -135,7 +168,6 @@
     }
 
     #nav {
-
         padding: 10px;
     }
 
@@ -155,9 +187,11 @@
     img {
         -webkit-animation: run 16s linear 0s infinite;
     }
+
     img:hover {
         -webkit-animation-play-state: paused;
     }
+
     @-webkit-keyframes run {
         from {
             -webkit-transform: rotate(0deg);
@@ -192,4 +226,25 @@
         top: 66px;
     }
 
+    #a1:hover {
+        color: #C9302C;
+    }
+
+    #a2:hover {
+        font-size: 18px;
+    }
+
+    #a2 {
+        position: absolute;
+        left: 160px;
+        color: #C9302C;
+        font-size: larger;
+    }
+
+    #video1 {
+        position: absolute;
+        left: 345px;
+        top: 92px;
+        outline: none;
+    }
 </style>
